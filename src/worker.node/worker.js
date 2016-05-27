@@ -4,12 +4,20 @@ import EventEmitter from 'eventemitter3';
 
 import { getConfig } from '../config';
 
+let nextChildDebugPort = 45859;
 
 export default class Worker extends EventEmitter {
+  /**
+   * @param {function|string} initialRunnable   Method or path to file to run.
+   * @param {object} [options]                  Options to be passed to child.fork()
+   *                                            or an integer/function `debugPort`.
+   */
   constructor(initialRunnable, options = {}) {
     super();
 
-    this.slave = child.fork(path.join(__dirname, 'slave.js'), [], options);
+    this.fixDebuggerPort(options, () => {
+      this.slave = child.fork(path.join(__dirname, 'slave.js'), [], options);
+    });
     this.slave.on('message', this.handleMessage.bind(this));
     this.slave.on('error', this.handleError.bind(this));
     this.slave.on('exit', this.emit.bind(this, 'exit'));
@@ -66,6 +74,28 @@ export default class Worker extends EventEmitter {
         .once('message', resolve)
         .once('error', reject);
     });
+  }
+
+  /**
+   * Need to change debug port. See https://github.com/andywer/threads.js/issues/16.
+   */
+  fixDebuggerPort(options, forkCallback) {
+    if (typeof v8debug !== 'object') {
+      forkCallback();
+      return;
+    }
+
+    let debugPort = nextChildDebugPort++;
+
+    if (options.debugPort) {
+      debugPort = typeof options.debugPort === 'function'
+                ? options.debugPort(debugPort) : options.debugPort;
+    }
+
+    // Temporarily change debug port number to something else.
+    process.execArgv.push('--debug=' + debugPort);
+    forkCallback();
+    process.execArgv.pop();
   }
 
   handleMessage(message) {
