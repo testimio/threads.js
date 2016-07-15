@@ -1,12 +1,12 @@
 'use strict';
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+var _expect = require('expect.js');
 
-var _expectJs = require('expect.js');
-
-var _expectJs2 = _interopRequireDefault(_expectJs);
+var _expect2 = _interopRequireDefault(_expect);
 
 var _ = require('../../');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function cloneWithMods(obj, callback) {
   var clone = JSON.parse(JSON.stringify(obj));
@@ -19,7 +19,7 @@ describe('Config', function () {
 
   it('can be read', function () {
     var initialConfig = _.config.get();
-    (0, _expectJs2['default'])(initialConfig).to.be.a('object');
+    (0, _expect2.default)(initialConfig).to.be.a('object');
   });
 
   it('can override existing properties', function () {
@@ -33,16 +33,16 @@ describe('Config', function () {
       configObj.basepath.web = '/scripts';
     });
 
-    (0, _expectJs2['default'])(_.config.get()).to.eql(expectedNewConfig);
+    (0, _expect2.default)(_.config.get()).to.eql(expectedNewConfig);
   });
 
   it('can set custom properties', function () {
     _.config.set({ someUnknownProp: 'test' });
-    (0, _expectJs2['default'])(_.config.get().someUnknownProp).to.eql('test');
+    (0, _expect2.default)(_.config.get().someUnknownProp).to.eql('test');
   });
 
   it('prevents setting a string config to an object', function () {
-    (0, _expectJs2['default'])(function () {
+    (0, _expect2.default)(function () {
       _.config.set({
         basepath: {
           web: { illegal: 'object' }
@@ -52,7 +52,7 @@ describe('Config', function () {
   });
 
   it('prevents setting an object config to a string', function () {
-    (0, _expectJs2['default'])(function () {
+    (0, _expect2.default)(function () {
       _.config.set({
         basepath: 'no string allowed here'
       });

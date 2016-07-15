@@ -1,12 +1,12 @@
 'use strict';
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+var _expect = require('expect.js');
 
-var _expectJs = require('expect.js');
-
-var _expectJs2 = _interopRequireDefault(_expectJs);
+var _expect2 = _interopRequireDefault(_expect);
 
 var _lib = require('../../lib/');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 describe('Pool (functional test)', function () {
   var pool = new _lib.Pool();
@@ -33,9 +33,9 @@ describe('Pool (functional test)', function () {
 
   it('responds as expected', function (done) {
     Promise.all(promises).then(function (responses) {
-      (0, _expectJs2['default'])(responses.sort()).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      (0, _expect2.default)(responses.sort()).to.eql([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
       done();
-    })['catch'](function (error) {
+    }).catch(function (error) {
       done(error);
     });
   });

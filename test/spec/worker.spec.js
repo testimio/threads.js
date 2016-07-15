@@ -1,26 +1,28 @@
 'use strict';
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _async = require('async');
 
 var _async2 = _interopRequireDefault(_async);
 
-var _expectJs = require('expect.js');
+var _expect = require('expect.js');
 
-var _expectJs2 = _interopRequireDefault(_expectJs);
+var _expect2 = _interopRequireDefault(_expect);
 
 var _sinon = require('sinon');
 
 var _sinon2 = _interopRequireDefault(_sinon);
 
-var _libWorker = require('../../lib/worker');
+var _worker = require('../../lib/worker');
 
-var _libWorker2 = _interopRequireDefault(_libWorker);
+var _worker2 = _interopRequireDefault(_worker);
 
 var _ = require('../../');
 
-var env = typeof window === 'object' ? 'browser' : 'node';
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var env = (typeof window === 'undefined' ? 'undefined' : _typeof(window)) === 'object' ? 'browser' : 'node';
 
 function echoThread(param, done) {
   done(param);
@@ -34,7 +36,7 @@ function progressThread(param, done, progress) {
 
 function canSendAndReceive(worker, dataToSend, expectToRecv, done) {
   worker.once('message', function (data) {
-    (0, _expectJs2['default'])(data).to.eql(expectToRecv);
+    (0, _expect2.default)(data).to.eql(expectToRecv);
     done();
   }).send(dataToSend);
 }
@@ -45,17 +47,17 @@ function canSendAndReceiveEcho(worker, done) {
 }
 
 function expectEqualBuffers(buffer1, buffer2) {
-  (0, _expectJs2['default'])(buffer2.byteLength).to.equal(buffer1.byteLength);
+  (0, _expect2.default)(buffer2.byteLength).to.equal(buffer1.byteLength);
 
   for (var index = 0; index < buffer1.byteLength; index++) {
-    (0, _expectJs2['default'])(buffer2[index]).to.equal(buffer1[index]);
+    (0, _expect2.default)(buffer2[index]).to.equal(buffer1[index]);
   }
 }
 
 describe('Worker', function () {
 
   before(function () {
-    _sinon2['default'].stub(_.config, 'get').returns({
+    _sinon2.default.stub(_.config, 'get').returns({
       basepath: {
         node: __dirname + '/../thread-scripts',
         web: 'http://localhost:9876/base/test/thread-scripts'
@@ -66,23 +68,23 @@ describe('Worker', function () {
   it('can be spawned', function () {
     var worker = (0, _.spawn)();
 
-    (0, _expectJs2['default'])(worker).to.be.a('object');
-    (0, _expectJs2['default'])(worker).to.be.a(_libWorker2['default']);
+    (0, _expect2.default)(worker).to.be.a('object');
+    (0, _expect2.default)(worker).to.be.a(_worker2.default);
   });
 
   it('can be killed', function (done) {
-    var spy = undefined;
+    var spy = void 0;
     var worker = (0, _.spawn)();
 
     // the browser worker owns a worker, the node worker owns a slave
     if (env === 'browser') {
-      spy = _sinon2['default'].spy(worker.worker, 'terminate');
+      spy = _sinon2.default.spy(worker.worker, 'terminate');
     } else {
-      spy = _sinon2['default'].spy(worker.slave, 'kill');
+      spy = _sinon2.default.spy(worker.slave, 'kill');
     }
 
     worker.on('exit', function () {
-      (0, _expectJs2['default'])(spy.calledOnce).to.be.ok();
+      (0, _expect2.default)(spy.calledOnce).to.be.ok();
       done();
     });
     worker.kill();
@@ -113,9 +115,9 @@ describe('Worker', function () {
       threadDone('a', 'b', 'c');
     });
     worker.send().on('message', function (a, b, c) {
-      (0, _expectJs2['default'])(a).to.eql('a');
-      (0, _expectJs2['default'])(b).to.eql('b');
-      (0, _expectJs2['default'])(c).to.eql('c');
+      (0, _expect2.default)(a).to.eql('a');
+      (0, _expect2.default)(b).to.eql('b');
+      (0, _expect2.default)(c).to.eql('c');
       worker.kill();
       done();
     });
@@ -125,7 +127,7 @@ describe('Worker', function () {
     var worker = (0, _.spawn)();
 
     // .run(code), .send(data), .run(script), .send(data), .run(code), .send(data)
-    _async2['default'].series([function (stepDone) {
+    _async2.default.series([function (stepDone) {
       canSendAndReceiveEcho(worker.run(echoThread), stepDone);
     }, function (stepDone) {
       canSendAndReceive(worker.run('abc-sender.js'), null, 'abc', stepDone);
@@ -140,7 +142,7 @@ describe('Worker', function () {
     });
 
     worker.on('error', function (error) {
-      (0, _expectJs2['default'])(error.message).to.match(/^((Uncaught )?Error: )?Test message$/);
+      (0, _expect2.default)(error.message).to.match(/^((Uncaught )?Error: )?Test message$/);
       done();
     });
     worker.send();
@@ -149,10 +151,10 @@ describe('Worker', function () {
   it('can promise and resolve', function (done) {
     var promise = (0, _.spawn)(echoThread).send('foo bar').promise();
 
-    (0, _expectJs2['default'])(promise).to.be.a(Promise);
+    (0, _expect2.default)(promise).to.be.a(Promise);
 
     promise.then(function (response) {
-      (0, _expectJs2['default'])(response).to.eql('foo bar');
+      (0, _expect2.default)(response).to.eql('foo bar');
       done();
     });
   });
@@ -163,8 +165,8 @@ describe('Worker', function () {
     });
     var promise = worker.send().promise();
 
-    promise['catch'](function (error) {
-      (0, _expectJs2['default'])(error.message).to.match(/^((Uncaught )?Error: )?I fail$/);
+    promise.catch(function (error) {
+      (0, _expect2.default)(error.message).to.match(/^((Uncaught )?Error: )?I fail$/);
       done();
     });
   });
@@ -179,7 +181,7 @@ describe('Worker', function () {
     worker.send();
 
     worker.on('message', function () {
-      (0, _expectJs2['default'])(progressUpdates).to.eql([0.3, 0.6]);
+      (0, _expect2.default)(progressUpdates).to.eql([0.3, 0.6]);
       done();
     });
   });
@@ -194,7 +196,7 @@ describe('Worker', function () {
     worker.send();
 
     worker.on('done', function () {
-      (0, _expectJs2['default'])(progressUpdates).to.eql([0.3, 0.6]);
+      (0, _expect2.default)(progressUpdates).to.eql([0.3, 0.6]);
       done();
     });
   });
@@ -226,7 +228,7 @@ describe('Worker', function () {
       var worker = (0, _.spawn)().run(function (input, threadDone) {
         this.importedEcho(input, threadDone);
       }, ['import-me.js']).send('abc').on('message', function (response) {
-        (0, _expectJs2['default'])(response).to.eql('abc');
+        (0, _expect2.default)(response).to.eql('abc');
         worker.kill();
         done();
       });
