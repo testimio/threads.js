@@ -10,8 +10,14 @@
     "restParams"     : true,
     "templateStrings": true
   },
+  "env": {
+    "es6": true
+  },
   "globals" : {
     "setTimeout" : true
+  },
+  "parserOptions": {
+    "sourceType": "module"
   },
   "rules" : {
     "global-strict"   : 0,
