@@ -4,8 +4,8 @@
 
   default: [ 'dist', 'test' ],
 
-  dist: [ 'build:lib', 'build:deployable-slave' ],
-  test: [ 'lint', 'build:tests', 'test:node', 'test:browser' ],
+  dist: 'run-p build:lib build:deployable-slave',
+  test: 'run-p lint test:unit',
 
   ////////////////
   // Build tasks:
@@ -21,12 +21,12 @@
   'slave:copy': 'cp src/worker.browser/slave.js.txt dist/slave.js',
   'slave:uglify': 'uglifyjs dist/slave.js -c -m -o dist/slave.min.js',
 
-  'build:tests': 'babel test/spec-src/ -d test/spec/',
-
   //////////////////
   // Testing tasks:
 
   'lint': 'eslint -c .eslintrc src/**/*.js src/**/*.js.txt test/spec-src/*.js',
+  'test:unit': 'run-p test:node test:browser',
+  'test:unit-babel': 'babel test/spec-src/ -d test/spec/',
   'test:node': 'mocha test/spec/*.spec.js',
   'test:browser': 'karma start karma.conf.js'
 }
