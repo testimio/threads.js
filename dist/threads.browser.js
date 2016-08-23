@@ -39,9 +39,19 @@ if (_typeof(window.Worker) !== 'object' && typeof window.Worker !== 'function') 
   throw new Error('Browser does not support web workers!');
 }
 
+function joinPaths(path1, path2) {
+  if (!path1 || !path2) {
+    return path1 + path2;
+  } else if (path1.charAt(path1.length - 1) === '/' || path2.charAt(0) === '/') {
+    return path1 + path2;
+  } else {
+    return path1 + '/' + path2;
+  }
+}
+
 function prependScriptUrl(scriptUrl) {
   var prefix = (0, _config.getConfig)().basepath.web;
-  return prefix ? prefix + '/' + scriptUrl : scriptUrl;
+  return prefix ? joinPaths(prefix, scriptUrl) : scriptUrl;
 }
 
 function convertToArray(input) {
@@ -76,7 +86,12 @@ var Worker = function (_EventEmitter) {
 
     _classCallCheck(this, Worker);
 
+    // used by `run()` to decide if the worker must be re-initialized
+
     var _this = _possibleConstructorReturn(this, _EventEmitter.call(this));
+
+    _this.currentRunnable = null;
+    _this.currentImportScripts = [];
 
     _this.initWorker();
     _this.worker.addEventListener('message', _this.handleMessage.bind(_this));
@@ -106,11 +121,20 @@ var Worker = function (_EventEmitter) {
   Worker.prototype.run = function run(toRun) {
     var importScripts = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 
+    if (this.alreadyInitializedToRun(toRun, importScripts)) {
+      // don't re-initialize with the new logic if it already has been
+      return this;
+    }
+
     if (typeof toRun === 'function') {
       this.runMethod(toRun, importScripts);
     } else {
       this.runScripts(toRun, importScripts);
     }
+
+    this.currentRunnable = toRun;
+    this.currentImportScripts = importScripts;
+
     return this;
   };
 
@@ -160,6 +184,13 @@ var Worker = function (_EventEmitter) {
     return new Promise(function (resolve, reject) {
       _this2.once('message', resolve).once('error', reject);
     });
+  };
+
+  Worker.prototype.alreadyInitializedToRun = function alreadyInitializedToRun(toRun, importScripts) {
+    var runnablesMatch = this.currentRunnable === toRun;
+    var importScriptsMatch = this.currentImportScripts === importScripts || importScripts.length === 0 && this.currentImportScripts.length === 0;
+
+    return runnablesMatch && importScriptsMatch;
   };
 
   Worker.prototype.handleMessage = function handleMessage(event) {
@@ -462,8 +493,12 @@ var Pool = function (_EventEmitter) {
     _this.jobQueue = [];
     _this.runArgs = [];
 
-    _this.on('newJob', _this.handleNewJob.bind(_this));
-
+    _this.on('newJob', function (job) {
+      return _this.handleNewJob(job);
+    });
+    _this.on('threadAvailable', function () {
+      return _this.dequeue();
+    });
     return _this;
   }
 
@@ -494,26 +529,44 @@ var Pool = function (_EventEmitter) {
   };
 
   Pool.prototype.dequeue = function dequeue() {
+    var _this2 = this;
+
     if (this.jobQueue.length === 0 || this.idleThreads.length === 0) {
-      return this.once('threadAvailable', this.dequeue);
+      return;
     }
 
     var job = this.jobQueue.shift();
     var thread = this.idleThreads.shift();
 
-    job.once('done', this.handleJobSuccess.bind(this, thread, job)).once('error', this.handleJobError.bind(this, thread, job));
+    job.once('done', function () {
+      for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      return _this2.handleJobSuccess.apply(_this2, [thread, job].concat(args));
+    }).once('error', function () {
+      for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return _this2.handleJobError.apply(_this2, [thread, job].concat(args));
+    });
 
     job.executeOn(thread);
   };
 
   Pool.prototype.handleNewJob = function handleNewJob(job) {
+    var _this3 = this;
+
     this.lastCreatedJob = job;
-    job.once('readyToRun', this.queueJob.bind(this, job)); // triggered by job.send()
+    job.once('readyToRun', function () {
+      return _this3.queueJob(job);
+    }); // triggered by job.send()
   };
 
   Pool.prototype.handleJobSuccess = function handleJobSuccess(thread, job) {
-    for (var _len = arguments.length, responseArgs = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      responseArgs[_key - 2] = arguments[_key];
+    for (var _len3 = arguments.length, responseArgs = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+      responseArgs[_key3 - 2] = arguments[_key3];
     }
 
     this.emit.apply(this, ['done', job].concat(responseArgs));
@@ -526,7 +579,7 @@ var Pool = function (_EventEmitter) {
   };
 
   Pool.prototype.handleJobDone = function handleJobDone(thread) {
-    var _this2 = this;
+    var _this4 = this;
 
     this.idleThreads.push(thread);
     this.emit('threadAvailable');
@@ -534,7 +587,7 @@ var Pool = function (_EventEmitter) {
     if (this.idleThreads.length === this.threads.length) {
       // run deferred to give other job.on('done') handlers time to run first
       setTimeout(function () {
-        _this2.emit('finished');
+        _this4.emit('finished');
       }, 0);
     }
   };
