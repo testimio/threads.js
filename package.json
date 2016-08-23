@@ -26,6 +26,9 @@
     "build": "launch dist",
     "test": "launch test"
   },
+  "engines": {
+    "node": ">= 4.0"
+  },
   "devDependencies": {
     "async": "^1.4.2",
     "babel-cli": "^6.10.1",
