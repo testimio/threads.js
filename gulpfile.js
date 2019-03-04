@@ -60,7 +60,7 @@ gulp.task('lint', () => {
 
 
 gulp.task('copy-slave', () => {
-  return gulp.src('src/worker.browser/slave.js.txt')
+  return gulp.src('src/workerBrowser/slave.js.txt')
     .pipe(rename('slave.js'))
     .pipe(gulp.dest('dist/'));
 });
@@ -82,10 +82,10 @@ gulp.task('babel-spec', () => {
 
 
 gulp.task('browser-slave-module', () => {
-  return gulp.src('./src/worker.browser/slave.js.txt')
+  return gulp.src('./src/workerBrowser/slave.js.txt')
     .pipe(toStringModule())
     .pipe(rename('slave-code.js'))
-    .pipe(gulp.dest('./lib/worker.browser/'));
+    .pipe(gulp.dest('./lib/workerBrowser/'));
 });
 
 
@@ -94,7 +94,7 @@ gulp.task('browserify-lib', gulp.parallel(['babel-lib', 'browser-slave-module'])
     .add('./lib/index.js')
 
     // overrides, so the node-specific files won't make their way into the bundle
-    .require('./lib/worker.browser/worker.js', { expose : './worker' })
+    .require('./lib/workerBrowser/worker.js', { expose : './worker' })
     .require('./lib/defaults.browser.js', { expose : './defaults' })
     .bundle()
     .pipe(source('threads.browser.js'))

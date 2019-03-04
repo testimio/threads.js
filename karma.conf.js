@@ -31,7 +31,7 @@ module.exports = function configureKarma(config) {
       debug     : true,
       configure(bundle) {
         bundle.on('prebundle', () => {
-          bundle.require('./lib/worker.browser/worker.js', { expose : './worker' })   // keep the node worker out of the bundle
+          bundle.require('./lib/workerBrowser/worker.js', { expose : './worker' })   // keep the node worker out of the bundle
         });
       }
     },
